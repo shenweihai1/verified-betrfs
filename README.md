@@ -6,7 +6,7 @@ Implementation:
 - Issues on `bank-paper` dafny code in method `TryAccountTransfer`:
     - should guarantee `sourceAccountId != destAccountId`;
     - liveness: if locks are not acquired in order, it would cause a deadlock;
-    - **IMPORTANT**: requires to ensure amount is correct after and before operation; there is no verification on correctness of this function;
+    - **IMPORTANT**: requires to ensure amount is correct after and before operation; there is no verification on correctness of this function; There is a concern that if missing verification on `TryAccountTransfer` would signficantly change auto-genearted c++ code and degrade the throuhgput.
 
 How to run it, note that we can't verify on function `TryAccountTransfer`, because I replaced `nat` into `uint64` which requires more efforts on overflowing:
 ```bash
