@@ -10,6 +10,49 @@
 #include <unordered_map>
 #include <cstring>
 
+class BigNumber {
+private :
+    long value;
+public :
+    BigNumber(long num) {
+            value = num;
+    }
+    long Int64() {
+            return value;
+    }
+    //friend bool operator==(BigNumber b1, const BigNumber &b2);
+    //friend bool operator==(BigNumber b1, const long long &b2);
+    //friend bool operator==(BigNumber b1, const std::string &b2); 
+
+    //BigNumber& operator=(const BigNumber &other);
+    //BigNumber& operator=(const long long &other);
+    //BigNumber& operator=(const std::string &other);
+};
+
+//bool operator==(BigNumber b1, const BigNumber &b2) {
+//    return true;
+//}
+//
+//bool operator==(BigNumber b1, const long long &b2) {
+//    return true; 
+//}
+//
+//bool operator==(BigNumber b1, const std::string &b2) {
+//    return true;
+//}
+//
+//BigNumber& BigNumber::operator=(const BigNumber &other) {
+//    return *this;
+//}
+//
+//BigNumber& BigNumber::operator=(const long long &other) {
+//    return *this;
+//}
+//
+//BigNumber& BigNumber::operator=(const std::string &other) {
+//    return *this;
+//}
+
 namespace MapRemove__s_Compile {
   template <typename K, typename V>
   DafnyMap<K, V> ComputeMapRemove1(DafnyMap<K, V> m, K key)
@@ -137,12 +180,12 @@ namespace MainDiskIOHandler_Compile {
   class DiskIOHandler {
     public:
     uint64 write(uint64 addr, DafnySequence<uint8> bytes);
-    Tuple2<uint64, uint64> write2(
+    Tuple<uint64, uint64> write2(
       uint64 addr1, DafnySequence<uint8> bytes1,
       uint64 addr2, DafnySequence<uint8> bytes2);
     uint64 read(uint64 addr, uint64 len);
-    Tuple3<uint64, uint64, uint64> getWriteResult();
-    Tuple3<uint64, uint64, DafnySequence<uint8>> getReadResult();
+    Tuple<uint64, uint64, uint64> getWriteResult();
+    Tuple<uint64, uint64, DafnySequence<uint8>> getReadResult();
 
     DiskIOHandler(std::string filename = ".veribetrfs.img");
     ~DiskIOHandler();

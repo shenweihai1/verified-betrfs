@@ -4,6 +4,7 @@ include "../framework/Mutex.i.dfy"
 include "../../lib/Lang/LinearSequence.i.dfy"
 
 module BankImplementation refines BankSpec {
+  newtype{:nativeType "long"} nat64 = i:int | 0 <= i < 0x8000000000000000
   import Bank
   import BankTokens
   import opened Mutexes
@@ -78,11 +79,23 @@ module BankImplementation refines BankSpec {
       // us update a shared memory cell, which we would gain exclusive access to via
       // the mutex.)
 
-      newSourceBalance := sourceBalance - amount;
+      var a : nat64;
+      var b : nat64;
+      var c : nat64;
+      var d : nat64;
+      var e : nat64;
+      a := sourceBalance as nat64;
+      b := destBalance as nat64;
+      c := amount as nat64;
+      d := a - c;
+      e := b + c;
+      
+      // newSourceBalance := sourceBalance - amount;
+      newSourceBalance := d as nat;
 
       // 3. Update the dest balance.
-
-      newDestBalance := destBalance + amount;
+      // newDestBalance := destBalance + amount;
+      newDestBalance := e as nat;
 
       // 4. Ghost update here
 

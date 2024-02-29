@@ -1,8 +1,5 @@
 #pragma once
 
-// can't make it as <key, value> of hash in DafnyRuntime.h
-using BigNumber = int;
-
 #include "DafnyRuntime.h"
 #include "LinearExtern.h"
 
@@ -12,26 +9,25 @@ using BigNumber = int;
 #include <thread>
 #include <atomic>
 
-//class BigNumber {
-//private :
-//    long value;
-//public :
-//    BigNumber(long num) {
-//            value = num;
-//    }
-//    long Int64() {
-//            return value;
-//    }
-//    auto operator<=>( const S& ) const = default; //this automatically provides all relational operators
-//    friend bool operator==(BigNumber b1, const BigNumber &b2);
-//    friend bool operator==(BigNumber b1, const long long &b2);
-//    friend bool operator==(BigNumber b1, const std::string &b2);
-//
-//    BigNumber& operator=(const BigNumber &other);
-//    BigNumber& operator=(const long long &other);
-//    BigNumber& operator=(const std::string &other);
-//};
-//
+class BigNumber {
+private :
+    long value;
+public :
+    BigNumber(long num) {
+            value = num;
+    }
+    long Int64() {
+            return value;
+    }
+    //friend bool operator==(BigNumber b1, const BigNumber &b2);
+    //friend bool operator==(BigNumber b1, const long long &b2);
+    //friend bool operator==(BigNumber b1, const std::string &b2);
+
+    //BigNumber& operator=(const BigNumber &other);
+    //BigNumber& operator=(const long long &other);
+    //BigNumber& operator=(const std::string &other);
+};
+
 //bool operator==(BigNumber b1, const BigNumber &b2) {
 //    return true;
 //}

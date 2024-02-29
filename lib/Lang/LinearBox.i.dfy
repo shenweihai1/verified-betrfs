@@ -9,7 +9,7 @@ module LinearBox {
 
   // Warning: does not automatically deallocate the linear value.
   // (either Take and deallocate manually, or use BoxedLinearOption, below, to guarantee deallocation)
-  class BoxedLinear<A>
+  class BoxedLinear<A(00)>
   {
     var data:SwapAffine<maybe<A>>
     ghost var Repr:set<object>

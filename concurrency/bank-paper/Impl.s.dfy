@@ -1,6 +1,6 @@
 include "../../lib/Lang/NativeTypes.s.dfy"
 
-module BankSpec {
+abstract module BankSpec {
   import opened NativeTypes
   type AccountSeq
 

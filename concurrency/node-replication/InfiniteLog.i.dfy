@@ -374,18 +374,8 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
    *
    * function READONLY(args) {
    *   { ReadonlyInit(r, op) }
-   *     readTail ← sharedLog.completedTail
    *   { ReadonlyCtail(r, op, readTail) }
-   *     while localTail < readTail {
-   *       // reader might acquire writer lock and update
-   *       WaitOrUpdate(readTail)
-   *     }
    *   { ReadonlyReadyToRead(r, op) }
-   *     rwLock.Acquire-Reader()
-   *     response ← replica.ReadOnly(args)
-   *     rwLock.Release-Reader()
-   *   { ReadonlyDone(r, response) }
-   *     return response
    * }
    */
 
@@ -406,7 +396,6 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
   // ASSUMPTION: the read operation has already been placed in the `localReads` part of the state
   //
   // { ReadonlyInit(r, op) }
-  //   readTail ← sharedLog.completedTail
   // { ReadonlyCtail(r, op, readTail) }
   predicate TransitionReadonlyReadCtail(m: M, m': M, rid: RequestId) {
     && StateValid(m)
@@ -427,10 +416,6 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
   // If the local ttail has advanced, transition to ReadyToRead state
   //
   // { ReadonlyCtail(r, op, readTail) }
-  //   while localTail < readTail {
-  //     // reader might acquire writer lock and update
-  //     WaitOrUpdate(readTail)
-  //   }
   // { ReadonlyReadyToRead(r, op) }
   predicate TransitionReadonlyReadyToRead(m: M, m': M, nodeId: nat, rid: RequestId) {
     && StateValid(m)
@@ -453,9 +438,6 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
   // Perform the read operation and transition to ReadDone state
   //
   // { ReadonlyReadyToRead(r, op) }
-  //   rwLock.Acquire-Reader()
-  //   response ← replica.ReadOnly(args)
-  //   rwLock.Release-Reader()
   // { ReadonlyDone(r, response) }
   predicate TransitionReadonlyDone(m: M, m': M, nodeId: nat, rid: RequestId) {
     && StateValid(m)
@@ -596,14 +578,6 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
 
   // reserve entries on the shared log
   // { UpdateInit(r, op1) ; UpdateInit(p, op2) ; UpdateInit(q, op3) ; CombinerReady ; GlobalTail(t) }
-  //   tail = cmpxchg(tail, tail + ops.len()); // retry on fail
-  //   for (i, op) in ops {
-  //     let m = lmask[tkn]
-  //     flip m on wrap around
-  //     slog[tail+i].operation = Some(op);
-  //     slog[tail+i].replica = tkn;
-  //     slog[tail+i].alive = m; // last, tso here // Log(…) entries managed by slog
-  //   }
   // { UpdatePlaced(r) ; UpdatePlaced(p) ; UpdatePlaced(q) ; CombinerPlaced( [p,q,r] ) ;
   //   Log(t, op1) ; Log(t+1, op2) ; Log(t+2, op1) ; GlobalTail(t + ops.len()) }
   predicate AdvanceTail(m: M, m': M, nodeId: nat, request_ids: seq<RequestId>)
@@ -658,9 +632,7 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
   // This is the beginning of the execute operation. We start with reading our local tail
   //
   // exec():
-  // { CombinerPlaced(queue) ; … }
   //   ltail = load ltails[tkn] // read our local ltail
-  // { CombinerLtail(queue, ltail) ; … }
   predicate ExecLoadLtail(m: M, m': M, nodeId: nat) {
     && StateValid(m)
     && InCombinerPlaced(m, nodeId)
@@ -683,9 +655,6 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
   // log. Note: the entries may not have been placed in the log yet.
   //
   // exec():
-  // { CombinerLtail(queue, ltail) ; … }
-  //   gtail = load tail
-  // { Combiner (queue, ltail, gtail, 0) ; … }
   predicate ExecLoadGlobalTail(m: M, m': M, nodeId: nat) {
     && StateValid(m)
     && InCombinerLocalTail(m, nodeId)
@@ -704,19 +673,6 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
 
   // STATE TRANSITION: Combiner -> Combiner (local case)
   //
-  //   assert (ltail < gtail && ltail[tkn] >= head);
-  //   for i in ltail..gtail {
-  //     Busy loop until slog[i].alive == lmasks[tkn]
-  //     // case shown here is the one where log node_id = combiner node_id
-  //     { Log(node_id, op); Combiner (queue, ltail, gtail, j) ; UpdatePlaced(queue[j]) ; … }
-  //     d(slog[i].op, slog[i].replica)
-  //     { Log(node_id, op); Combiner (queue, ltail+1, gtail, j+1) ; UpdateDone(return_value) ; … }
-  //     // case 2 is where log node_id != combiner node_id
-  //     if i == size – 1 {
-  //       // Update generation on wrap-around
-  //       lmasks[tkn] = !lmasks[tkn]
-  //     }
-  //   }
   predicate ExecDispatchLocal(m: M, m': M, nodeId: nat) {
     && StateValid(m)
     && InCombiner(m, nodeId)
@@ -780,9 +736,6 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
   // Update the ctail to the maximum of the current stored global tail, and the current ctail
   //
   // assert (ltail = gtail)
-  // { Combiner(queue, ltail, gtail, j) ; … }
-  //   ctail = max(tail, ctail) // update completed tail
-  // { CombinerUpdatedCtail(gtail, ltail, gtail, j) ; … }
   predicate UpdateCompletedTail(m: M, m': M, nodeId: nat) {
     && StateValid(m)
     && InCombinerDone(m, nodeId)
@@ -803,11 +756,8 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
   // Update the ctail to the maximum of the current stored global tail, and the current ctail
   //
   // assert (ltail = gtail)
-  // { Combiner(queue, ltail, gtail, j) ; … }
-  //   if ltail == gtail {
   //       return
   //   }
-  // { CombinerReady ; … }
   predicate UpdateCompletedNoChange(m: M, m': M, nodeId: nat) {
     && StateValid(m)
     && InCombinerNoChange(m, nodeId)
@@ -819,9 +769,6 @@ module InfiniteLogSSM(nrifc: NRIfc) refines TicketStubSSM(nrifc) {
   //
   // Update the state of the update request from UpdateApplied to Done when the CTail has advanced
   //
-  // { CombinerUpdatedCtail(gtail, ltail, gtail, j) ; … }
-  //   store ltails[tkn] = gtail; // update replica's tail
-  // { CombinerReady ; … }
   predicate GoToCombinerReady(m: M, m': M, nodeId: nat) {
     && StateValid(m)
     && InCombinerUpdateCompleteTail(m, nodeId)

@@ -87,6 +87,8 @@ module MathUtils {
 }
 
 module Bank refines Rw {
+  newtype{:nativeType "long"} nat64 = i:int | 0 <= i < 0x8000000000000000
+  type StoredType = nat64
   import MathUtils
 
   const NumberOfAccounts := 7;

@@ -31,6 +31,7 @@ abstract module PCMWrap refines PCM {
 
   predicate is_one(m: M) {
     exists a :: m == one(a)
+    //1 == 1 
   }
 
   // TODO remove? predicate is_many(m: M) {
