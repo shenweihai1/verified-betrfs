@@ -3,7 +3,10 @@ The goal is to run the baseline of 2PC in auto-generated c++.
 
 Implementation:
 - `bank-paper` exactly works as 2pc with mutexs, so just use it with slight modications; However, I encountered several issues to compile into C++, the major issue is `BigNumber` (refer to https://github.com/dafny-lang/dafny/issues/5095 for details and solutions)
-- Issues on `bank-paper` dafny code in method `TryAccountTransfer`: (1) should guarantee `sourceAccountId != destAccountId`; (2) liveness: if locks are not acquired in order, it would cause a deadlock.
+- Issues on `bank-paper` dafny code in method `TryAccountTransfer`:
+    - should guarantee `sourceAccountId != destAccountId`;
+    - liveness: if locks are not acquired in order, it would cause a deadlock;
+    - **IMPORTANT**: requires to ensure amount is correct after and before operation.
 
 How to run it, note that we can't verify on function `TryAccountTransfer`, because I replaced `nat` into `uint64` which requires more efforts on overflowing:
 ```bash
@@ -32,7 +35,25 @@ thread-id:9, runtime:3, suc/time:3913499, aborts/time:0
 tol: 5001000000, initBalance: 5001, keyspace: 1000000
 ```
 
+Analysis on the generated code on 2pc:
+```cpp
+// a list contains all accounts, each account along with `std::atomic` variable
+List: struct { 
+    Atomic cell → std::atomic<v> slot; 
+    AccountEntry → balance;  
+}
 
+// before doing any operation on `AccountEntry`, do a `compare_exchange_strong` provided in std::atomic
+template <typename V, typename G>
+bool execute__atomic__compare__and__set__strong(
+      Atomic<V, G>& a,
+      V v1,
+      V v2)
+{
+  return a.slot.compare_exchange_strong(v1, v2, std::memory_order_seq_cst);
+}
+```
+The throughput of auto-generated code is very good. This is because, even if I were to implement a two-phase commit (2PC) in C++ independently, I would still opt for a similar approach.
 
 
 
